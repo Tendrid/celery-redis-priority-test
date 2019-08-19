@@ -13,7 +13,6 @@ def hook(*args, **kwargs):
 
 class TestPriority(TestCase):
 
-    @skip("REMOVE ME")
     def test_simple(self):
         """
         Test a simple FIFO queue with priority (de)escalation
@@ -52,7 +51,6 @@ class TestPriority(TestCase):
             "Numeric Priority not completed in expected order"
         )
 
-    #@skip("REMOVE ME")
     def test_chord(self):
         """
         Test a complex chain of chords with (de)escalation
