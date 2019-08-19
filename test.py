@@ -13,6 +13,7 @@ def hook(*args, **kwargs):
 
 class TestPriority(TestCase):
 
+    @skip("")
     def test_simple(self):
         """
         Test a simple FIFO queue with priority (de)escalation
@@ -24,8 +25,8 @@ class TestPriority(TestCase):
             { "priority": 9, "fixture_name": "D" }, # deescalate
             { "priority": 0, "fixture_name": "E" },
             { "priority": 0, "fixture_name": "F" },
-            { "priority": 0, "fixture_name": "G" },
-            { "priority": 9, "fixture_name": "H" }, # deescalate
+            { "priority": 9, "fixture_name": "G" }, # deescalate
+            { "priority": 0, "fixture_name": "H" },
         ]
         results = [] 
         for task in tasks:
@@ -47,10 +48,11 @@ class TestPriority(TestCase):
 
         self.assertEqual(
             success,
-            ["A", "B", "C", "E", "F", "G", "D", "H"],
+            ["A", "B", "C", "E", "F", "H", "D", "G"],
             "Numeric Priority not completed in expected order"
         )
 
+    @skip("")
     def test_chord(self):
         """
         Test a complex chain of chords with (de)escalation
@@ -104,3 +106,44 @@ class TestPriority(TestCase):
             "Numeric Priority not completed in expected order"
         )
 
+
+
+class TestPriorityQueue(TestCase):
+    def test_simple(self):
+        """
+        Test a simple FIFO queue with priority (de)escalation
+        """
+        tasks = [
+            { "priority": 0, "fixture_name": "A", "queue":"a-high"},    # 1
+            { "priority": 0, "fixture_name": "B", "queue":"b-medium"},  # 3
+            { "priority": 0, "fixture_name": "C", "queue":"a-high"},    # 1
+            { "priority": 9, "fixture_name": "D", "queue":"a-high"},    # 2
+            { "priority": 0, "fixture_name": "E", "queue":"a-high"},    # 1
+            { "priority": 0, "fixture_name": "F", "queue":"b-medium"},  # 3
+            { "priority": 9, "fixture_name": "G", "queue":"a-high"},    # 2
+            { "priority": 0, "fixture_name": "H", "queue":"a-high"},    # 1
+        ]
+        results = [] 
+        for task in tasks:
+            t = wait.s(**task).set(queue=task["queue"])
+            results.append(t.apply_async(priority=task["priority"]))
+
+        complete = False
+        success = []
+        while not complete:
+            complete = True
+            for r in results:
+                if r.state != "SUCCESS":
+                    complete = False
+                else:
+                    v = r.result
+                    if v not in success:
+                        success.append(v)
+            sleep(1)
+
+        self.assertEqual(
+            success,
+            ["A", "C", "E", "H", "D", "G", "B", "F"],
+            #['A', 'C', 'E', 'H', 'B', 'F', 'D', 'G']
+            "Numeric Priority not completed in expected order"
+        )
