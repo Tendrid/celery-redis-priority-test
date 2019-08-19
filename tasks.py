@@ -4,8 +4,11 @@ from time import sleep
 sleep_seconds = 1
 
 @app.task
-def wait(priority, fixture_name):
-    print(f"IN  {priority} {fixture_name}")
+def wait(*args, **kwargs):
+    if not kwargs:
+        for a in args:
+            if type(a) is dict:
+                kwargs = a
+    print(kwargs.get("fixture_name"))
     sleep(sleep_seconds)
-    print(f"OUT {priority} {fixture_name}")
-    return fixture_name
+    return kwargs.get("fixture_name", "UNKNOWN")
