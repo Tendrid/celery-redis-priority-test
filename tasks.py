@@ -1,7 +1,7 @@
 from app import app
 from time import sleep
 
-sleep_seconds = 1
+sleep_seconds = 0.5
 
 @app.task
 def wait(*args, **kwargs):

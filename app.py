@@ -6,7 +6,7 @@ app = Celery("priority-test")
 app.conf.result_backend = "redis://dev:dev@localhost:6379"
 app.conf.broker_url = "redis://dev:dev@localhost:6379"
 
-#app.conf.task_default_queue = "b-medium"
+app.conf.task_default_queue = "b-medium"
 
 app.conf.task_create_missing_queues = True
 

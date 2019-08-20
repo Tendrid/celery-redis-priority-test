@@ -1,5 +1,5 @@
 from unittest import TestCase, mock, skip
-from tasks import wait
+from tasks import wait, sleep_seconds
 from time import sleep
 from celery import group, chord, chain
 
@@ -12,10 +12,6 @@ NOTE:
 This first task fired in each test must ALWAYS assumed to finish first. This
 is because when the tasks fire, the queue is empty, so it has no other higher priority
 """
-
-def hook(*args, **kwargs):
-    print(args)
-    print(kwargs)
 
 class TestPriority(TestCase):
 
@@ -49,7 +45,7 @@ class TestPriority(TestCase):
                     v = r.result
                     if v not in success:
                         success.append(v)
-            sleep(1)
+            sleep(sleep_seconds)
 
         self.assertEqual(
             success,
@@ -102,7 +98,7 @@ class TestPriority(TestCase):
                     v = r.result
                     if v not in success:
                         success.append(v)
-            sleep(1)
+            sleep(sleep_seconds)
 
         self.assertEqual(
             success,
@@ -154,7 +150,7 @@ class TestPriorityQueue(TestCase):
                     v = r.result
                     if v not in success:
                         success.append(v)
-            sleep(1)
+            sleep(sleep_seconds)
 
         self.assertEqual(
             success,
