@@ -24,7 +24,6 @@ app.conf.task_queues = (
     Queue("a-high"),
     Queue("b-medium"),
     Queue("c-low"),
-    Queue("d-ghost"),
 )
 
 """

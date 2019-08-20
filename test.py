@@ -4,7 +4,7 @@ from time import sleep
 from celery import group, chord, chain
 
 # Priorities:   0, 3, 6, 9
-# Queues:       a-high, b-medium, c-low, d-ghost
+# Queues:       a-high, b-medium, c-low
 
 
 """
@@ -53,7 +53,7 @@ class TestPriority(TestCase):
             "Numeric Priority not completed in expected order"
         )
 
-    def test_chord(self):
+    def test_complex(self):
         """
         Test a complex chain of chords with (de)escalation
         """
@@ -155,5 +155,63 @@ class TestPriorityQueue(TestCase):
         self.assertEqual(
             success,
             ["A", "B", "D", "E", "G", "F", "H", "C"],
+            "Numeric Priority not completed in expected order"
+        )
+
+
+    def test_complex(self):
+        """
+        Test a complex chain of chords with (de)escalation
+        This test further prooves what TestPriorityQueue.test_simple
+        already states in its comment, but tests it further.
+        There are, however, interesting things to note in the output
+        such as task 0-C completing _after_ 2-A beings.
+        """
+        tasks_defs = [
+            (0, 9, "a-high"),
+            (1, 3, "c-low"),
+            (2, 3, "a-high"),
+            (3, 6, "c-low"),
+        ]
+        results = []
+        for task_id, task_priority, queue in tasks_defs:
+
+            _chains = []
+            for chain_id in ["A", "B"]:
+                chain_tasks = [
+                    { "fixture_name": f"{task_id}-{chain_id}-1" },
+                    { "fixture_name": f"{task_id}-{chain_id}-2" },
+                    { "fixture_name": f"{task_id}-{chain_id}-3" },
+                ]
+                _c = []
+                for task in chain_tasks:
+                    _c.append(wait.s(**task))
+                _chains.append(chain(_c))
+            t = chain(
+                wait.s({"prority":task_priority, "fixture_name": f"{task_id}-A"}),
+                chord(
+                    _chains,
+                    wait.s({"prority":task_priority, "fixture_name": f"{task_id}-B"})
+                ),
+                wait.s({"prority":task_priority, "fixture_name": f"{task_id}-C"}),
+            )
+            results.append(t.apply_async(priority=task_priority, queue=queue))
+
+        complete = False
+        success = []
+        while not complete:
+            complete = True
+            for r in results:
+                if r.state != "SUCCESS":
+                    complete = False
+                else:
+                    v = r.result
+                    if v not in success:
+                        success.append(v)
+            sleep(sleep_seconds)
+
+        self.assertEqual(
+            success,
+            ["0-C", "2-C", "1-C", "3-C"],
             "Numeric Priority not completed in expected order"
         )
