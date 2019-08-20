@@ -1,7 +1,9 @@
 from celery import Celery, signals
 from kombu import Queue, Exchange
 
-app = Celery("priority-test")
+
+app_name = "priority-test"
+app = Celery(app_name)
 
 app.conf.result_backend = "redis://dev:dev@localhost:6379"
 app.conf.broker_url = "redis://dev:dev@localhost:6379"
@@ -26,15 +28,13 @@ app.conf.task_queues = (
     Queue("c-low"),
 )
 
-"""
-app.conf.task_queues = (
-    Queue('a-high', Exchange('default'), routing_key='a-high'),
-    Queue('b-medium',  Exchange('default'),   routing_key='b-medium'),
-    Queue('c-low',  Exchange('default'),   routing_key='c-low'),
-    Queue('d-ghost',  Exchange('default'),   routing_key='d-ghost'),
-)
-
-app.conf.task_default_queue = 'default'
-app.conf.task_default_exchange_type = 'direct'
-app.conf.task_default_routing_key = 'default'
-"""
+app.conf.task_routes = {
+    f'tasks.low_priority_wait': {
+        'queue': 'c-low',
+        'routing_key': 'c-low.priority',
+    },
+    f'tasks.high_priority_wait': {
+        'queue': 'a-high',
+        'routing_key': 'a-high.priority',
+    },
+}
