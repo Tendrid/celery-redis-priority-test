@@ -9,6 +9,10 @@ from celery import group, chord, chain
 class TestPriorityRoutes(TestCase):
 
     def test_basic_routing(self):
+        """
+        This test mimics the test in test_basic_priority.TestPriorityQueue.test_simple
+        but instead of passing in the queue, it leverages task_routes bound to the app
+        """
         tasks = [
             { "priority": 0, "fixture_name": "A", "task": high_priority_wait},
             { "priority": 0, "fixture_name": "B", "task": low_priority_wait},
@@ -40,7 +44,6 @@ class TestPriorityRoutes(TestCase):
         self.assertEqual(
             success,
             ["A", "B", "D", "E", "G", "F", "H", "C"],
-            #['A', 'B', 'D', 'E', 'F', 'G', 'C', 'H']
             "Numeric Priority not completed in expected order"
         )
 
