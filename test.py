@@ -7,6 +7,12 @@ from celery import group, chord, chain
 # Queues:       a-high, b-medium, c-low, d-ghost
 
 
+"""
+NOTE:
+This first task fired in each test must ALWAYS assumed to finish first. This
+is because when the tasks fire, the queue is empty, so it has no other higher priority
+"""
+
 def hook(*args, **kwargs):
     print(args)
     print(kwargs)
@@ -112,21 +118,32 @@ class TestPriorityQueue(TestCase):
     def test_simple(self):
         """
         Test a simple FIFO queue with priority (de)escalation
+
+        This test shows that priority is honored above queue order
+        eg: given two queues, "a-work" and "b-work", and 3 tasks,
+        "t-1", "t-2", and "t-3", if t-1 and t-2 are in a, and t3 is in b,
+        they will complete in order (t1,t2,t3)
+
+        However, if t-2 has a priority of 0, and all others have a priority of 3,
+        they will complete: t-2, t-1, t-3
+
+        Further, if t-3 has a priority of 0, and t-1 and t-2 have a priority of 3,
+        they will complete: t-3, t-1, t-2
         """
         tasks = [
-            { "priority": 0, "fixture_name": "A", "queue":"a-high"},    # 1
-            { "priority": 0, "fixture_name": "B", "queue":"b-medium"},  # 3
-            { "priority": 0, "fixture_name": "C", "queue":"a-high"},    # 1
-            { "priority": 9, "fixture_name": "D", "queue":"a-high"},    # 2
-            { "priority": 0, "fixture_name": "E", "queue":"a-high"},    # 1
-            { "priority": 0, "fixture_name": "F", "queue":"b-medium"},  # 3
-            { "priority": 9, "fixture_name": "G", "queue":"a-high"},    # 2
-            { "priority": 0, "fixture_name": "H", "queue":"a-high"},    # 1
+            { "priority": 0, "fixture_name": "A", "queue":"a-high"},
+            { "priority": 0, "fixture_name": "B", "queue":"b-medium"},
+            { "priority": 9, "fixture_name": "C", "queue":"b-medium"},
+            { "priority": 3, "fixture_name": "D", "queue":"a-high"},
+            { "priority": 3, "fixture_name": "E", "queue":"a-high"},
+            { "priority": 3, "fixture_name": "F", "queue":"b-medium"},
+            { "priority": 3, "fixture_name": "G", "queue":"a-high"},
+            { "priority": 9, "fixture_name": "H", "queue":"a-high"},
         ]
         results = [] 
         for task in tasks:
-            t = wait.s(**task).set(queue=task["queue"])
-            results.append(t.apply_async(priority=task["priority"]))
+            t = wait.s(**task)
+            results.append(t.apply_async(priority=task["priority"], queue=task["queue"]))
 
         complete = False
         success = []
@@ -143,7 +160,6 @@ class TestPriorityQueue(TestCase):
 
         self.assertEqual(
             success,
-            ["A", "C", "E", "H", "D", "G", "B", "F"],
-            #['A', 'C', 'E', 'H', 'B', 'F', 'D', 'G']
+            ["A", "B", "D", "E", "G", "F", "H", "C"],
             "Numeric Priority not completed in expected order"
         )
