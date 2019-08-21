@@ -165,10 +165,10 @@ class TestPriorityQueue(TestCase):
         This test further prooves what TestPriorityQueue.test_simple
         already states in its comment, but tests it further.
         There are, however, interesting things to note in the output
-        such as task 0-C completing _after_ 2-A beings.
+        such as task 0-C sometimes completing _after_ 2-A beings.
         """
         tasks_defs = [
-            (0, 9, "a-high"),
+            (0, 0, "a-high"),
             (1, 3, "c-low"),
             (2, 3, "a-high"),
             (3, 6, "c-low"),
