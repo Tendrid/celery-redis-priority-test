@@ -14,6 +14,6 @@ Used to determine how priorities are working in celery with a redis backend
 
 #### Undocumented, or incorrect assertions of Celery and Redis:
 1. `task_inherit_parent_priority` is available for the Redis backend, and not just AMQP
-2. Task priority is low to high, eg: tasks with a priority of `0` are handeled _before_ `9`
+2. Task priority order is low numeric value to high numeric value, eg: tasks with a priority of `0` are handeled _before_ `9`
 3. If you set the `broker_transport_options` to `{"queue_order_strategy": "sorted"}`, it will prioritize tasks from queues in alphabetical order
 4. Tasks are ran in order of sorting first by task priority, and second by queue order 
