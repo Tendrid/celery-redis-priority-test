@@ -18,6 +18,8 @@ app.conf.broker_transport_options = {"queue_order_strategy": "sorted"}
 
 app.conf.worker_prefetch_multiplier = 1
 
+app.conf.task_inherit_parent_priority = True
+
 #app.conf.broker_transport_options = {
 #    'priority_steps': list(range(10)),
 #}
