@@ -1,6 +1,13 @@
 # celery-redis-priority-test
 Used to determine how priorities are working in celery with a redis backend
 
+# run in docker
+
+```
+docker-compose up
+```
+
+![screenshot](./screenshot.png)
 
 # How to do the thing:
 run celery in one shell
