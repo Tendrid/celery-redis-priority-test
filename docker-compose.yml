@@ -1,0 +1,74 @@
+version: '3.7'
+
+networks:
+    network-celery:
+        driver: bridge
+
+volumes:
+    data-redis:
+
+services:
+    redis-stream:
+        image: redis:5.0.7-buster
+        container_name: redis-stream
+        hostname: redis-stream
+        restart: always
+        ports:
+            - "6379:6379"
+        command: ["redis-server", "--appendonly", "yes"]
+        networks:
+            - network-celery
+    
+    celery-flower:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: frkhit/celery-py36
+        container_name: celery-flower
+        hostname: celery-flower
+        restart: always
+        ports:
+            - 5555:5555
+        entrypoint: celery
+        command: ["flower", "--broker=redis://redis-stream:6379/0", "--port=5555",]
+        depends_on:
+            - redis-stream
+        networks:
+            - network-celery
+    
+    celery-worker:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: frkhit/celery-py36
+        restart: always
+        volumes:
+            - ../celery-redis-priority-test:/app
+        environment:
+            - WORKER_NAME=celery-worker
+        entrypoint: celery
+        command: ["-A", "tasks", "worker", "--loglevel=info", "-n", "celery-worker", "-Q", "a-high,b-medium,c-low", "-Ofair", "-c1", "--prefetch-multiplier=1"]
+        depends_on:
+            - redis-stream
+            - celery-flower
+        networks:
+            - network-celery
+
+    celery-test:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: frkhit/celery-py36
+        volumes:
+            - ../celery-redis-priority-test:/app
+        environment:
+            - PYTHONPATH=/app
+        entrypoint: python
+        command: ["-m", "unittest", "discover" , "-s", "./tests"]
+        depends_on:
+            - redis-stream
+            - celery-flower
+            - celery-worker
+        networks:
+            - network-celery
+
